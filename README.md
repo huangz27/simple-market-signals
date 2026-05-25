@@ -13,47 +13,39 @@ Sample report: [reports/report-20260525-230145.md](reports/report-20260525-23014
 | **Claude Code** (default) | `python main.py` then ask Claude Code to analyze | $0 (uses your Claude subscription) | You're already using Claude Code daily |
 | **API** | `python main.py --use-api` | ~$0.20-0.40/run on Opus 4.7 | Fully standalone; for scheduled/headless runs |
 
-## Setup
+## Quick start (Claude Code, no API cost)
+
+Prerequisite: Python 3.10+ and [Claude Code](https://claude.com/claude-code).
 
 ```powershell
 git clone https://github.com/huangz27/simple-market-signals
 cd simple-market-signals
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+claude   # open Claude Code in this directory
 ```
 
-API mode only:
-
-```powershell
-copy .env.example .env
-# edit .env with your key from https://console.anthropic.com/settings/keys
-```
-
-## Usage — with Claude Code (no API cost)
-
-If you have [Claude Code](https://claude.com/claude-code) installed, just open the project
-and run the slash command:
+Then in Claude Code:
 
 ```
 /scan
 ```
 
-This runs `python main.py` to fetch fresh data, then Claude Code analyzes the snapshot
-using the rubric in `ANALYSIS_PROMPT.md` and writes a report to `reports/`.
+That's it. `/scan` installs dependencies on first run, fetches the F&G index and Reddit
+posts, then writes a report to `reports/`. Subsequent runs skip the install step.
 
-Or do it in two steps manually:
+You can also just say "analyze the latest snapshot" or "produce a report" — `CLAUDE.md`
+tells Claude Code what to do regardless of phrasing.
+
+## Setup for API mode
+
+Only needed if you want fully unattended runs that don't depend on Claude Code being open:
 
 ```powershell
-python main.py
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+copy .env.example .env
+# edit .env with your key from https://console.anthropic.com/settings/keys
 ```
-
-then in Claude Code:
-
-> analyze the latest snapshot
-
-The `CLAUDE.md` at repo root tells Claude Code how to find and process the snapshot, so any
-phrasing works (`/scan`, "analyze it", "produce a report" — all do the same thing).
 
 ## Usage — API mode (fully standalone)
 

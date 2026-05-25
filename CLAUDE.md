@@ -17,11 +17,12 @@ This repo collects retail-investor sentiment data and turns it into a structured
 
 If the user says anything like "analyze the latest snapshot", "produce a report", "run a scan", or invokes `/scan`:
 
-1. Find the most recent file matching `data/snapshot-*.json` (or use the file the user names).
-2. Read it. Snapshots can be large (~30K tokens for ~70 posts) — read the whole thing, don't truncate. If it doesn't fit in one Read call, paginate with `offset`/`limit` until you have all of it.
-3. Apply the rubric in `ANALYSIS_PROMPT.md` exactly — same section structure, same signal kinds, same ticker table format.
-4. Write the report to `reports/report-<same-timestamp>.md` using the same timestamp suffix as the snapshot file.
-5. Cite specific post URLs for every signal. Do not invent tickers or themes that aren't actually in the snapshot.
+1. If no snapshot exists yet (`data/` is empty or missing), run `python main.py` to create one. If that fails with `ModuleNotFoundError`, run `pip install -q -r requirements.txt` and retry. If Python itself isn't installed, tell the user they need Python 3.10+ and stop.
+2. Find the most recent file matching `data/snapshot-*.json` (or use the file the user names).
+3. Read it. Snapshots can be large (~30K tokens for ~70 posts) — read the whole thing, don't truncate. If it doesn't fit in one Read call, paginate with `offset`/`limit` until you have all of it.
+4. Apply the rubric in `ANALYSIS_PROMPT.md` exactly — same section structure, same signal kinds, same ticker table format.
+5. Write the report to `reports/report-<same-timestamp>.md` using the same timestamp suffix as the snapshot file.
+6. Cite specific post URLs for every signal. Do not invent tickers or themes that aren't actually in the snapshot.
 
 ## What this project is for
 
