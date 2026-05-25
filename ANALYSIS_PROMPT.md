@@ -8,6 +8,8 @@ and produce a markdown report into `reports/report-<same-timestamp>.md`.
 - `collected_at` — ISO timestamp
 - `fear_and_greed` — CNN F&G index: current score (0-100), rating, previous close, 1w/1m/1y history
 - `posts` — array of Reddit posts: subreddit, title, selftext, score, num_comments, upvote_ratio, url, flair
+- `news` — array of financial news headlines (last 24h) from MarketWatch, CNBC, Seeking Alpha:
+  source, title, summary, url, published (ISO timestamp)
 
 ## What to extract
 
@@ -16,22 +18,25 @@ Don't just summarize. Pull out **actionable market signals**:
 - **Tickers** discussed unusually heavily, with the dominant take (bullish/bearish/mixed)
 - **Concrete theses** being argued, not just "to the moon" noise
 - **Contrarian opportunities** — when retail sentiment diverges from the F&G reading
+- **News/retail divergences** — important news the crowd is ignoring, or retail
+  overreacting to news that doesn't merit it
 - **Emerging themes** (sector rotations, macro fears, specific catalysts like earnings/Fed)
 - **Risk signals** — euphoria, panic, leverage talk, "this time is different" thinking
 
 Be skeptical. Retail forums are noisy and often wrong. When F&G shows extreme greed and
 Reddit echoes it, that's a contrarian warning sign — note it. When F&G shows fear but
-specific posts argue thoughtful bull cases, surface those.
+specific posts argue thoughtful bull cases, surface those. Use the news headlines as
+ground truth context — they're closer to authoritative reporting than Reddit takes.
 
-Cite the URLs of specific posts that support each signal. Do not invent tickers or themes
-not actually present in the input.
+Cite the URLs of specific posts and headlines that support each signal. Do not invent
+tickers or themes not actually present in the input.
 
 ## Output format
 
 ```markdown
 # Market Signals Report — <date> <time>
 
-Scanned **N** Reddit posts across investor subreddits.
+Scanned **N** Reddit posts and **M** news headlines (last 24h).
 
 ## Fear & Greed Index (CNN)
 

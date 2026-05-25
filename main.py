@@ -16,6 +16,7 @@ from datetime import datetime
 from pathlib import Path
 
 import fng
+import news
 import reddit
 
 
@@ -32,14 +33,19 @@ def _serialize(obj):
 def main() -> int:
     use_api = "--use-api" in sys.argv
 
-    print("[1/2] Fetching CNN Fear & Greed Index...")
+    print("[1/3] Fetching CNN Fear & Greed Index...")
     fng_data = fng.fetch()
     print(f"      -> {fng_data.score:.0f} ({fng_data.rating})")
 
-    print("[2/2] Fetching Reddit hot posts...")
+    print("[2/3] Fetching Reddit hot posts...")
     posts = reddit.fetch_all()
     subs = sorted(set(p.subreddit for p in posts))
     print(f"      -> {len(posts)} posts across {len(subs)} subs: {', '.join(subs)}")
+
+    print("[3/3] Fetching financial news headlines (last 24h)...")
+    headlines = news.fetch_all()
+    sources = sorted(set(h.source for h in headlines))
+    print(f"      -> {len(headlines)} headlines from {len(sources)} sources: {', '.join(sources)}")
 
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
@@ -49,6 +55,7 @@ def main() -> int:
         "collected_at": datetime.now().isoformat(),
         "fear_and_greed": _serialize(fng_data),
         "posts": [_serialize(p) for p in posts],
+        "news": [_serialize(h) for h in headlines],
     }
     snapshot_path = data_dir / f"snapshot-{timestamp}.json"
     snapshot_path.write_text(json.dumps(snapshot, indent=2), encoding="utf-8")
@@ -68,8 +75,8 @@ def main() -> int:
         import report
 
         print(f"\nAnalyzing with {analyze.MODEL} via Anthropic API...")
-        result = analyze.analyze(fng_data, posts)
-        markdown = report.render(fng_data, result, len(posts))
+        result = analyze.analyze(fng_data, posts, headlines)
+        markdown = report.render(fng_data, result, len(posts), len(headlines))
 
         reports_dir = Path("reports")
         reports_dir.mkdir(exist_ok=True)

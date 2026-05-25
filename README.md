@@ -1,7 +1,8 @@
 # simple-market-signals
 
-Fetches the CNN Fear & Greed Index and scans hot posts from retail-investor subreddits
-(r/wallstreetbets, r/stocks, r/investing, r/StockMarket), then extracts structured market
+Fetches the CNN Fear & Greed Index, hot posts from retail-investor subreddits
+(r/wallstreetbets, r/stocks, r/investing, r/StockMarket), and recent financial news
+headlines (MarketWatch, CNBC, Seeking Alpha, last 24h), then extracts structured market
 signals into a markdown report.
 
 Sample report: [reports/report-20260525-230145.md](reports/report-20260525-230145.md).
@@ -61,6 +62,7 @@ Does everything in one shot: fetch + Claude Opus 4.7 analysis + report write.
 main.py              # entry point (default = collect only; --use-api = collect + analyze)
 fng.py               # CNN Fear & Greed fetcher
 reddit.py            # Reddit hot-posts fetcher
+news.py              # financial news RSS fetcher (MarketWatch, CNBC, Seeking Alpha)
 analyze.py           # API-mode analyzer (Anthropic SDK + Pydantic)
 report.py            # API-mode markdown renderer
 ANALYSIS_PROMPT.md   # rubric Claude Code follows in default mode

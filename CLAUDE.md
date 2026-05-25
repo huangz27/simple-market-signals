@@ -7,6 +7,7 @@ This repo collects retail-investor sentiment data and turns it into a structured
 - `main.py` — entry point. Default mode: fetches data and writes `data/snapshot-<timestamp>.json`. With `--use-api`: also calls the Anthropic API (Opus 4.7) to produce a report directly.
 - `fng.py` — CNN Fear & Greed Index fetcher (no auth needed)
 - `reddit.py` — Reddit hot-posts fetcher across r/wallstreetbets, r/stocks, r/investing, r/StockMarket (public JSON, no auth)
+- `news.py` — financial news headlines via RSS from MarketWatch, CNBC, Seeking Alpha (last 24h, no auth)
 - `analyze.py` — API-mode analyzer using the Anthropic SDK with a Pydantic schema
 - `report.py` — markdown renderer for API mode
 - `ANALYSIS_PROMPT.md` — the rubric you (Claude Code) follow when analyzing a snapshot in default mode
@@ -26,7 +27,7 @@ If the user says anything like "analyze the latest snapshot", "produce a report"
 
 ## What this project is for
 
-The user wants to spot contrarian opportunities and risk signals by combining the F&G index (institutional sentiment proxy) with retail-forum chatter. Be skeptical — retail forums are noisy and often wrong. When F&G and retail both show extreme greed, that's a contrarian warning sign; when they diverge, surface the divergence.
+The user wants to spot contrarian opportunities and risk signals by combining the F&G index (institutional sentiment proxy), retail-forum chatter, and recent news headlines. Be skeptical — retail forums are noisy and often wrong. When F&G and retail both show extreme greed, that's a contrarian warning sign; when they diverge, surface the divergence. Use news as ground-truth context — flag when retail is over/underreacting to actual news, or ignoring news that should be moving sentiment.
 
 ## Two modes — don't confuse them
 

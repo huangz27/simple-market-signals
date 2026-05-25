@@ -9,6 +9,7 @@ import anthropic
 from pydantic import BaseModel, Field
 
 from fng import FearGreed
+from news import Headline
 from reddit import Post
 
 MODEL = "claude-opus-4-7"
@@ -16,6 +17,7 @@ MODEL = "claude-opus-4-7"
 SYSTEM_PROMPT = """You are a market sentiment analyst. You receive:
   1. The current CNN Fear & Greed Index score (0-100) and historical context.
   2. A batch of recent posts from retail-investor subreddits (titles, body text, scores, comment counts).
+  3. Recent financial news headlines (last 24h) from MarketWatch, CNBC, Seeking Alpha.
 
 Your job is to extract actionable market signals — not generic summaries.
 
@@ -23,15 +25,19 @@ Focus on:
   - Specific tickers and assets being discussed unusually heavily
   - Concrete bullish or bearish theses being argued (not just "to the moon" noise)
   - Contrarian opportunities: when retail sentiment diverges from professional indicators
+  - Divergences between news flow and retail reaction — news the crowd is ignoring or
+    overreacting to
   - Emerging themes (sector rotations, macro fears, specific catalysts like earnings/Fed)
   - Risk signals: euphoria, panic selling, leverage talk, "this time is different" thinking
 
 Be skeptical. Retail forums are noisy and often wrong. When the F&G index shows extreme
 greed and Reddit echoes it, that is a contrarian warning sign — note it explicitly. When
 the index shows fear but specific posts argue thoughtful bull cases, surface those too.
+Use the news headlines as ground truth context — they're closer to authoritative reporting
+than Reddit takes.
 
-Cite the URLs of specific posts that support each signal. Do not invent tickers or themes
-not actually present in the input."""
+Cite the URLs of specific posts and headlines that support each signal. Do not invent
+tickers or themes not actually present in the input."""
 
 
 class TickerMention(BaseModel):
@@ -78,7 +84,21 @@ def _compact_post(p: Post) -> dict:
     }
 
 
-def analyze(fng: FearGreed, posts: list[Post]) -> Analysis:
+def _compact_headline(h: Headline) -> dict:
+    return {
+        "source": h.source,
+        "title": h.title,
+        "summary": h.summary,
+        "url": h.url,
+        "published": h.published.isoformat() if h.published else None,
+    }
+
+
+def analyze(
+    fng: FearGreed,
+    posts: list[Post],
+    headlines: list[Headline] | None = None,
+) -> Analysis:
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
     fng_context = (
@@ -90,11 +110,15 @@ def analyze(fng: FearGreed, posts: list[Post]) -> Analysis:
     )
 
     posts_json = json.dumps([_compact_post(p) for p in posts], ensure_ascii=False)
+    headlines = headlines or []
+    headlines_json = json.dumps([_compact_headline(h) for h in headlines], ensure_ascii=False)
 
     user_message = (
         f"{fng_context}\n"
         f"Recent posts ({len(posts)} total, JSON):\n"
         f"{posts_json}\n\n"
+        f"Recent news headlines ({len(headlines)} total, last 24h, JSON):\n"
+        f"{headlines_json}\n\n"
         "Produce the structured analysis."
     )
 
@@ -119,6 +143,7 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
 
     import fng as fng_mod
+    import news as news_mod
     import reddit as reddit_mod
 
     load_dotenv()
@@ -126,6 +151,8 @@ if __name__ == "__main__":
     fng_data = fng_mod.fetch()
     print("Fetching Reddit...")
     posts = reddit_mod.fetch_all()
-    print(f"Analyzing {len(posts)} posts with {MODEL}...")
-    result = analyze(fng_data, posts)
+    print("Fetching news...")
+    headlines = news_mod.fetch_all()
+    print(f"Analyzing {len(posts)} posts and {len(headlines)} headlines with {MODEL}...")
+    result = analyze(fng_data, posts, headlines)
     print(json.dumps(result.model_dump(), indent=2))

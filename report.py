@@ -16,13 +16,22 @@ def _signal_emoji(kind: str) -> str:
     }.get(kind, "[?]")
 
 
-def render(fng: FearGreed, analysis: Analysis, post_count: int) -> str:
+def render(
+    fng: FearGreed,
+    analysis: Analysis,
+    post_count: int,
+    headline_count: int = 0,
+) -> str:
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     lines: list[str] = []
 
     lines.append(f"# Market Signals Report — {now}")
     lines.append("")
-    lines.append(f"Scanned **{post_count}** Reddit posts across investor subreddits.")
+    scan_summary = f"Scanned **{post_count}** Reddit posts"
+    if headline_count:
+        scan_summary += f" and **{headline_count}** news headlines (last 24h)"
+    scan_summary += "."
+    lines.append(scan_summary)
     lines.append("")
 
     lines.append("## Fear & Greed Index (CNN)")
