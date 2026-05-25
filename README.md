@@ -1,67 +1,90 @@
 # simple-market-signals
 
-Fetches the CNN Fear & Greed Index and scans hot posts from retail-investor subreddits,
-then extracts structured market signals into a markdown report.
+Fetches the CNN Fear & Greed Index and scans hot posts from retail-investor subreddits
+(r/wallstreetbets, r/stocks, r/investing, r/StockMarket), then extracts structured market
+signals into a markdown report.
 
-Two modes:
-- **Claude Code mode (default, no API cost)** — `main.py` just collects data into a JSON
-  snapshot; you ask Claude Code to read it and produce the report. Uses your Claude Max
-  subscription, no API key needed.
-- **API mode** — `main.py --use-api` calls Anthropic's API directly (Opus 4.7). Standalone
-  but pay-per-token (~$0.20-0.40 per run).
+Sample report: [reports/report-20260525-230145.md](reports/report-20260525-230145.md).
+
+## Two modes
+
+| Mode | How you run it | Cost | When to use |
+|---|---|---|---|
+| **Claude Code** (default) | `python main.py` then ask Claude Code to analyze | $0 (uses your Claude subscription) | You're already using Claude Code daily |
+| **API** | `python main.py --use-api` | ~$0.20-0.40/run on Opus 4.7 | Fully standalone; for scheduled/headless runs |
 
 ## Setup
 
 ```powershell
+git clone https://github.com/huangz27/simple-market-signals
+cd simple-market-signals
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
 API mode only:
+
 ```powershell
 copy .env.example .env
-# edit .env and paste your Anthropic API key from https://console.anthropic.com/settings/keys
+# edit .env with your key from https://console.anthropic.com/settings/keys
 ```
 
-## Usage — Claude Code mode
+## Usage — with Claude Code (no API cost)
+
+If you have [Claude Code](https://claude.com/claude-code) installed, just open the project
+and run the slash command:
+
+```
+/scan
+```
+
+This runs `python main.py` to fetch fresh data, then Claude Code analyzes the snapshot
+using the rubric in `ANALYSIS_PROMPT.md` and writes a report to `reports/`.
+
+Or do it in two steps manually:
 
 ```powershell
 python main.py
 ```
 
-Writes `data/snapshot-<timestamp>.json`. Then in Claude Code:
+then in Claude Code:
 
-> read `data/snapshot-<timestamp>.json` and produce a market signals report
+> analyze the latest snapshot
 
-Claude Code will read the snapshot, apply the rubric in `ANALYSIS_PROMPT.md`, and write
-`reports/report-<timestamp>.md`.
+The `CLAUDE.md` at repo root tells Claude Code how to find and process the snapshot, so any
+phrasing works (`/scan`, "analyze it", "produce a report" — all do the same thing).
 
-## Usage — API mode
+## Usage — API mode (fully standalone)
 
 ```powershell
 python main.py --use-api
 ```
 
-Does everything in one shot — fetch, analyze via Opus 4.7, write report.
+Does everything in one shot: fetch + Claude Opus 4.7 analysis + report write.
 
-## What it does
+## File layout
 
-1. `fng.py` — pulls the current CNN Fear & Greed score (and 1w / 1m / 1y history)
-2. `reddit.py` — fetches ~20 hot posts each from r/wallstreetbets, r/stocks, r/investing, r/StockMarket
-3. **Analysis** (either Claude Code reading the snapshot, or `analyze.py` calling the API):
-   - Aggregate retail sentiment vs. the F&G reading
-   - Most-discussed tickers and the dominant take on each
-   - Ranked signals (bullish / bearish / contrarian / risk) with supporting post URLs
-   - Notable themes and a contrarian take
-4. Report written to `reports/`
+```
+main.py              # entry point (default = collect only; --use-api = collect + analyze)
+fng.py               # CNN Fear & Greed fetcher
+reddit.py            # Reddit hot-posts fetcher
+analyze.py           # API-mode analyzer (Anthropic SDK + Pydantic)
+report.py            # API-mode markdown renderer
+ANALYSIS_PROMPT.md   # rubric Claude Code follows in default mode
+CLAUDE.md            # auto-loaded project context for Claude Code
+.claude/commands/    # slash commands (/scan)
+data/                # raw JSON snapshots (gitignored)
+reports/             # generated markdown reports (committed)
+```
 
-## Files
+## Scheduling daily runs (optional)
 
-- `main.py` — orchestrator
-- `fng.py`, `reddit.py` — data fetchers
-- `analyze.py`, `report.py` — API-mode analyzer + renderer
-- `ANALYSIS_PROMPT.md` — rubric Claude Code follows in default mode
+On Windows, use Task Scheduler to run `python main.py` daily — the snapshot will be ready
+each morning. Then `/scan` (or just open Claude Code and ask) to get the report.
+
+For fully unattended daily reports, schedule `python main.py --use-api` instead — costs
+API credits but produces the report without any human in the loop.
 
 ## Not investment advice
 
