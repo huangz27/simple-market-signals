@@ -9,8 +9,13 @@ import httpx
 DEFAULT_SUBREDDITS = ("wallstreetbets", "stocks", "investing", "StockMarket")
 
 HEADERS = {
-    # Reddit blocks generic User-Agents; this should be unique-ish per their guidelines.
-    "User-Agent": "simple-market-signals/0.1 (personal market sentiment scanner)",
+    # Browser-like UA — Reddit aggressively 403s generic and obvious-bot UAs.
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    ),
+    "Accept": "application/json, text/html, */*",
+    "Accept-Language": "en-US,en;q=0.9",
 }
 
 
@@ -27,7 +32,9 @@ class Post:
 
 
 def fetch_subreddit(name: str, limit: int = 25) -> list[Post]:
-    url = f"https://www.reddit.com/r/{name}/hot.json?limit={limit}"
+    # old.reddit.com tends to be more lenient with unauthenticated JSON requests
+    # than www.reddit.com.
+    url = f"https://old.reddit.com/r/{name}/hot.json?limit={limit}"
     with httpx.Client(timeout=20.0, headers=HEADERS, follow_redirects=True) as client:
         resp = client.get(url)
         resp.raise_for_status()
@@ -60,8 +67,13 @@ def fetch_all(
 ) -> list[Post]:
     all_posts: list[Post] = []
     for sub in subreddits:
-        all_posts.extend(fetch_subreddit(sub, limit=limit_per_sub))
-        time.sleep(1.0)  # be polite — Reddit rate limits unauthenticated calls
+        try:
+            all_posts.extend(fetch_subreddit(sub, limit=limit_per_sub))
+        except Exception as e:
+            # Reddit occasionally 403s individual subreddits — keep going so the
+            # rest of the scan (F&G + news + other subs) still completes.
+            print(f"  warning: failed to fetch r/{sub}: {e}")
+        time.sleep(2.0)  # be polite — Reddit rate limits unauthenticated calls
     return all_posts
 
 
